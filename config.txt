@@ -1,16 +1,15 @@
 # Node connections
-A:S1
-S1:B
-S1:S2
-S2:D
-S2:C
+PC_A:S1
+S1:R1
+R1:R2
+R2:R3
+R3:S2
+S2:PC_B
 # End node connections list
 
 # Computer IP and port numbers
-A,127.0.0.1,3000,00:1A:2B:3C:4D:5E
-B,127.0.0.1,3001,00:1A:2B:3C:4D:5F
-C,127.0.0.1,3002,00:1A:2B:3C:4D:60
-D,127.0.0.1,3003,00:1A:2B:3C:4D:61
+PC_A,127.0.0.1,3000,00:1A:2B:3C:4D:5E
+PC_B,127.0.0.1,3001,00:1A:2B:3C:4D:5F
 # End Computer List
 
 # Different port range for switches
@@ -19,33 +18,22 @@ S2,127.0.0.1,4001,00:1A:2B:3C:4D:63
 # End Switch List
 
 # Router Configuration
-R1,127.0.0.1,3000,00:1A:2B:3C:4D:64
-R2,127.0.0.1,4000,00:1A:2B:3C:4D:65
-R3,127.0.0.1,5000,00:1A:2B:3C:4D:66
+R1,127.0.0.1,5000,00:1A:2B:3C:4D:64
+R2,127.0.0.1,5001,00:1A:2B:3C:4D:65
+R3,127.0.0.1,5002,00:1A:2B:3C:4D:66
 # End of router list
 
-# Connections Table
-
-# Routers to Routers
-R1:R2
-R2:R3
-# End Router to Router List
-
-# Routers to subnets
-R1:N1
-R1:N2
-R1:N3
-R2:N3
-R2:N4
-R3:N4
-R3:N5
-R3:N6
-# End Routers to Subnets List
-
 # Explicit Routing Tables for each Router
-# Example for Router R1
-# RoutingTable for R1
-# N1, NextHopIP:Port, NextHopMAC
-# N2, NextHopIP:Port, NextHopMAC
-# N3, NextHopIP:Port, NextHopMAC
-# End Routing Table R1
+R1,192.168.2.0/24,192.168.1.2:5001
+R2,192.168.3.0/24,192.168.2.2:5002
+R3,192.168.4.0/24,192.168.3.2:5003
+# End Routing Tables
+
+# ARP table
+192.168.1.1,00:1A:2B:3C:4D:5E
+192.168.1.2,00:1A:2B:3C:4D:5F
+192.168.2.1,00:1A:2B:3C:4D:62
+192.168.2.2,00:1A:2B:3C:4D:63
+# End ARP table
+
+
