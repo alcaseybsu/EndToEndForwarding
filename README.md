@@ -1,7 +1,7 @@
 # Network Simulation Project
 
 ## Overview
-This project simulates a network with PCs, switches, and routers. The primary focus is to combine the Projects 1 and 2 and create a network that includes switches and routers. The following topology is used for the simulation:
+This project simulates a network with PCs, switches, and routers. The primary focus is to combine Projects 1 and 2 and create a network that includes switches and routers. The following topology is used for the simulation:
 
 ```
 PC_A --- Switch_1 --- Router_1 ---- Router_2 ----- Router_3-----Switch_2-----PC_B
