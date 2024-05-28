@@ -16,7 +16,7 @@ PC_A --- Switch_1 --- Router_1 ---- Router_2 ----- Router_3-----Switch_2-----PC_
 Compile all Java files in the project directory using the following command:
 
 ```sh
-javac *.java
+javac -d bin *.java
 ```
 
 ## Running the Network Devices
