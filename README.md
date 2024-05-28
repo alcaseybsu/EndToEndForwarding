@@ -24,37 +24,38 @@ Open separate terminal windows for each network device and run the `StartUp` cla
 
 ### Terminal 1 (PC_A)
 ```sh
-java StartUp PC_A
+java -cp bin StartUp PC_A
+
 ```
 
 ### Terminal 2 (PC_B)
 ```sh
-java StartUp PC_B
+java -cp bin StartUp PC_B
 ```
 
 ### Terminal 3 (Switch_1)
 ```sh
-java StartUp S1
+java -cp bin StartUp S1
 ```
 
 ### Terminal 4 (Switch_2)
 ```sh
-java StartUp S2
+java -cp bin StartUp S2
 ```
 
 ### Terminal 5 (Router_1)
 ```sh
-java StartUp R1
+java -cp bin StartUp R1
 ```
 
 ### Terminal 6 (Router_2)
 ```sh
-java StartUp R2
+java -cp bin StartUp R2
 ```
 
 ### Terminal 7 (Router_3)
 ```sh
-java StartUp R3
+java -cp bin StartUp R3
 ```
 
 ## Validation

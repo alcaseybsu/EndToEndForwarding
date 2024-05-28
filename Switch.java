@@ -13,19 +13,19 @@ public class Switch implements Runnable {
     private ConfigManager configManager;
     @SuppressWarnings("unused")
     private Map<String, String> routingTable = new HashMap<>();
+    private Set<String> receivedMessageIds = new HashSet<>(); // Set to store received message IDs
 
     public Switch(String name, int port, ConfigManager configManager) throws IOException {
         this.name = name;
         this.configManager = configManager;
         this.ipAddress = InetAddress.getByName(configManager.getIpAddress(name));
-        this.port = port; // Assuming port is part of the configuration outside the MAC address
+        this.port = port;
         this.socket = new DatagramSocket(this.port, this.ipAddress);
         this.neighbors = configManager.getConnectedDevices(name); // Initialize neighbors based on ConfigManager
-        this.routingTable = configManager.getRoutingTable(name); // Initialize routing table
     }
 
     public void run() {
-        System.out.println("Switch " + name + " is running.");
+        System.out.println("\nSwitch " + name + " is running.");
         new Thread(this::listenForPackets).start();
         listenForCommands();
     }
@@ -34,11 +34,11 @@ public class Switch implements Runnable {
         Scanner scanner = new Scanner(System.in);
         try {
             while (true) {
-                System.out.println("Enter command (show table, show neighbors, exit):");
+                System.out.println("\nEnter command (show table, show neighbors, exit):");
                 String command = scanner.nextLine().trim().toLowerCase();
 
                 if ("exit".equalsIgnoreCase(command)) {
-                    System.out.println("Exiting command listener.");
+                    System.out.println("\nExiting command listener.");
                     break;
                 }
 
@@ -50,7 +50,7 @@ public class Switch implements Runnable {
                         showNeighbors();
                         break;
                     default:
-                        System.out.println("Unknown command: " + command);
+                        System.out.println("\nUnknown command: " + command);
                         break;
                 }
             }
@@ -69,7 +69,7 @@ public class Switch implements Runnable {
                 handlePacket(packet);
             }
         } catch (IOException e) {
-            System.out.println("[" + name + "] Error receiving packet: " + e.getMessage());
+            System.out.println("\n[" + name + "] Error receiving packet: " + e.getMessage());
         } finally {
             socket.close();
         }
@@ -78,48 +78,53 @@ public class Switch implements Runnable {
     private void handlePacket(DatagramPacket packet) {
         String receivedData = new String(packet.getData(), 0, packet.getLength()).trim();
         String[] parts = receivedData.split("\\|");
-        if (parts.length < 3) return;
+        if (parts.length < 4) return;
 
-        String srcMAC = parts[0];
-        String destMAC = parts[1];
-        String payload = parts[2];
+        String messageId = parts[0];
+        String srcMAC = parts[1];
+        String destMAC = parts[2];
+        String payload = parts[3];
+
+        if (receivedMessageIds.contains(messageId)) return;
+        receivedMessageIds.add(messageId);
 
         String sourceIP = packet.getAddress().getHostAddress();
         int sourcePort = packet.getPort();
         forwardingTable.put(srcMAC, sourceIP + ":" + sourcePort);
 
-        forwardOrFlood(srcMAC, destMAC, payload);
+        forwardOrFlood(messageId, srcMAC, destMAC, payload);
     }
 
-    private void forwardOrFlood(String srcMAC, String destMAC, String payload) {
+    private void forwardOrFlood(String messageId, String srcMAC, String destMAC, String payload) {
         String destination = forwardingTable.get(destMAC);
         if (destination != null) {
-            forwardPacket(destMAC, payload, destination);
+            forwardPacket(messageId, srcMAC, destMAC, payload, destination);
         } else {
-            flood(srcMAC, payload);
+            flood(messageId, srcMAC, destMAC, payload);
         }
     }
 
-    private void forwardPacket(String destMAC, String payload, String destination) {
+    private void forwardPacket(String messageId, String srcMAC, String destMAC, String payload, String destination) {
         try {
             String[] parts = destination.split(":");
             InetAddress destAddress = InetAddress.getByName(parts[0]);
             int destPort = Integer.parseInt(parts[1]);
 
+            String fullMessage = messageId + "|" + srcMAC + "|" + destMAC + "|" + payload;
             DatagramPacket forwardPacket = new DatagramPacket(
-                payload.getBytes(),
-                payload.length(),
+                fullMessage.getBytes(),
+                fullMessage.length(),
                 destAddress,
                 destPort
             );
             socket.send(forwardPacket);
-            System.out.println("[" + name + "] Forwarded packet to " + destMAC + " at " + destination);
+            System.out.println("\n[" + name + "] Forwarded packet to " + destMAC + " at " + destination);
         } catch (IOException e) {
-            System.out.println("[" + name + "] Error forwarding packet: " + e.getMessage());
+            System.out.println("\n[" + name + "] Error forwarding packet: " + e.getMessage());
         }
     }
 
-    private void flood(String srcMAC, String payload) {
+    private void flood(String messageId, String srcMAC, String destMAC, String payload) {
         forwardingTable.forEach((mac, port) -> {
             if (!mac.equals(srcMAC)) {
                 try {
@@ -127,38 +132,43 @@ public class Switch implements Runnable {
                     InetAddress address = InetAddress.getByName(parts[0]);
                     int portNumber = Integer.parseInt(parts[1]);
 
+                    String fullMessage = messageId + "|" + srcMAC + "|" + destMAC + "|" + payload;
                     DatagramPacket floodPacket = new DatagramPacket(
-                        payload.getBytes(),
-                        payload.length(),
+                        fullMessage.getBytes(),
+                        fullMessage.length(),
                         address,
                         portNumber
                     );
                     socket.send(floodPacket);
-                    System.out.println("[" + name + "] Flooding packet to " + mac);
+                    System.out.println("\n[" + name + "] Flooding packet to " + mac);
                 } catch (IOException e) {
-                    System.out.println("[" + name + "] Error flooding packet: " + e.getMessage());
+                    System.out.println("\n[" + name + "] Error flooding packet: " + e.getMessage());
                 }
             }
         });
     }
 
     private void showTable() {
-        System.out.println("Forwarding Table:");
-        forwardingTable.forEach((key, value) -> System.out.println(key + " -> " + value));
+        System.out.println("\nForwarding Table:");
+        if (forwardingTable.isEmpty()) {
+            System.out.println("\nNo entries in forwarding table.");
+        } else {
+            forwardingTable.forEach((key, value) -> System.out.println(key + " -> " + value));
+        }
     }
 
     private void showNeighbors() {
-        System.out.println("Neighbors:");
+        System.out.println("\nNeighbors:");
         neighbors.forEach(neighbor -> System.out.println(neighbor));
     }
 
     public void setNeighbors(Map<String, String> neighbors) {
         this.neighbors = new ArrayList<>(neighbors.values());
-        System.out.println("Updated neighbors for Switch " + name + ": " + this.neighbors);
+        System.out.println("\nUpdated neighbors for Switch " + name + ": " + this.neighbors);
     }
 
     public void setRoutingTable(Map<String, String> routingTable) {
         this.routingTable = routingTable;
-        System.out.println("Updated routing table for Switch " + name + ": " + routingTable);
+        System.out.println("\nUpdated routing table for Switch " + name + ": " + routingTable);
     }
 }
